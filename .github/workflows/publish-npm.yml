@@ -1,0 +1,49 @@
+# Publishes the plugin to npm when a v* tag is pushed.
+#
+# Needs one repository secret: NPM_TOKEN — a Granular Access Token with
+# "Bypass two-factor authentication" enabled and Read-and-write package
+# permission. npm requires 2FA (or such a token) for every publish, so a plain
+# `npm login` token is not enough.
+#
+# The tag must match the version in package.json, so bump the version and tag
+# in the same commit.
+name: publish-npm
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # lets npm prove the build came from this repo (provenance)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Check the tag matches package.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "tag $tag != package.json $pkg" >&2
+            exit 1
+          fi
+
+      - name: Build the publish copy
+        env:
+          DSH_REPO: https://github.com/${{ github.repository }}
+        run: node scripts/prepare-npm.mjs
+
+      - name: Publish
+        working-directory: dist-npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
