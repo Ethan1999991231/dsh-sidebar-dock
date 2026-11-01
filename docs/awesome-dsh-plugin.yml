@@ -1,0 +1,10 @@
+# Drop this file into the awesome-dsh-plugin repo as
+#   data/plugins/Ethan1999991231__dsh-sidebar-dock.yml
+# and open the PR. One file is the whole submission.
+url: https://github.com/Ethan1999991231/dsh-sidebar-dock
+name: Ethan1999991231/dsh-sidebar-dock
+category: ui
+description:
+  en: Docks the DSH workspace and session list to the left, right, top or bottom edge, with auto-hide and an adjustable reveal zone.
+  zh: 把 DSH 的「工作区 / 会话记录」列表停靠到左、右、上、下任意一边，支持自动收纳与可调触发范围。
+icon: https://raw.githubusercontent.com/Ethan1999991231/dsh-sidebar-dock/main/icon.svg
