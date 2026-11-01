@@ -40,9 +40,18 @@ const rewrites = [];
 const pkgPath = join(out, 'package.json');
 const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
 pkg.name = NEW;
-pkg.repository = pkg.repository ?? { type: 'git', url: 'git+https://github.com/OWNER/dsh-sidebar-dock.git' };
-pkg.homepage = pkg.homepage ?? 'https://github.com/OWNER/dsh-sidebar-dock#readme';
-pkg.bugs = pkg.bugs ?? { url: 'https://github.com/OWNER/dsh-sidebar-dock/issues' };
+// Set DSH_REPO=https://github.com/<you>/dsh-sidebar-dock before publishing so the
+// repository / homepage / bugs fields point at your repo instead of the placeholder.
+const repo = (process.env.DSH_REPO || '').replace(/\.git$/, '');
+if (repo) {
+  pkg.repository = { type: 'git', url: `git+${repo}.git` };
+  pkg.homepage = `${repo}#readme`;
+  pkg.bugs = { url: `${repo}/issues` };
+} else {
+  pkg.repository = pkg.repository ?? { type: 'git', url: 'git+https://github.com/OWNER/dsh-sidebar-dock.git' };
+  pkg.homepage = pkg.homepage ?? 'https://github.com/OWNER/dsh-sidebar-dock#readme';
+  pkg.bugs = pkg.bugs ?? { url: 'https://github.com/OWNER/dsh-sidebar-dock/issues' };
+}
 pkg.publishConfig = { access: 'public' };
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
 rewrites.push(`package.json name -> ${NEW}`);
