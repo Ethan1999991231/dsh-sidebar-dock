@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "title": "Workspace list dock",
+    "description": "Dock the workspace / session list to the left, right, top or bottom edge from Settings → General; it can auto-hide to an edge line and reappear on hover, and the plugin rail stays on the left."
+  },
+  "position": {
+    "title": "Workspace list dock",
+    "desc": "Move the workspace / session list to another edge; the plugin rail stays on the left.",
+    "hint": "Away from the left the host resize handle is hidden; pick \"Left\" to restore.",
+    "locked": "The sidebar is collapsed right now — expand it, then pick the edge again.",
+    "peek": "Auto-hide",
+    "peekOn": "Collapsed to a thin line; hover near that edge to reveal it.",
+    "peekOff": "Always visible — it keeps occupying that edge.",
+    "rail": "Rail width",
+    "railFull": "Original",
+    "railMid": "Medium",
+    "railTight": "Compact",
+    "left": "Left",
+    "right": "Right",
+    "top": "Top",
+    "bottom": "Bottom",
+    "zone": "Reveal zone",
+    "zoneNarrow": "Narrow",
+    "zoneNormal": "Normal",
+    "zoneWide": "Wide",
+    "zoneHuge": "Huge"
+  }
+}
