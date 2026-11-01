@@ -1,0 +1,41 @@
+{
+  "name": "@local/dsh-sidebar-dock",
+  "version": "1.3.0",
+  "description": "Dock the DSH workspace / session list to the left, right, top or bottom edge, with an auto-hiding reveal band — configurable in Settings -> General.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "sidebar",
+    "dock",
+    "layout",
+    "workspace",
+    "sessions"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}
