@@ -2,23 +2,50 @@
 #
 #   .\publish.ps1
 #
-# npm requires a 6-digit TOTP for every publish. The hold on the account ends
-# 2026-11-04 11:14 UTC (20:14 Asia/Tokyo) — before that every publish is
-# rejected with 403 whether or not the code is correct.
+# npm requires a 6-digit TOTP for every publish. The hold on the account ended
+# 2026-11-04 11:14 UTC (20:14 Asia/Tokyo).
 #
 # Run it from the repository root. Nothing is published unless the version in
 # package.json is new.
+#
+# npm writes notices and 404s to stderr. Under $ErrorActionPreference = 'Stop',
+# Windows PowerShell 5.1 turns that into a NativeCommandError and kills the
+# script before it can ask for the OTP — which is exactly what a first publish
+# (npm view -> 404) hits. Every npm call below therefore runs with 'Continue'
+# and is judged by its exit code instead.
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+function Invoke-Npm {
+  param([string[]] $Arguments)
+  $previous = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $lines = @(& npm @Arguments 2>&1 | ForEach-Object { "$_" })
+    [pscustomobject]@{ Code = $LASTEXITCODE; Lines = $lines }
+  }
+  finally {
+    $ErrorActionPreference = $previous
+  }
+}
 
 Push-Location $root
 try {
   $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
   Write-Host "package version: $version"
 
-  $existing = npm view "dsh-sidebar-dock@$version" version 2>$null
-  if ($LASTEXITCODE -eq 0 -and $existing) {
+  $who = Invoke-Npm @('whoami')
+  if ($who.Code -ne 0) {
+    Write-Host 'Not signed in to npm — the stored token is rejected (npm whoami failed).' -ForegroundColor Red
+    Write-Host 'Run:  npm login' -ForegroundColor Yellow
+    Write-Host 'then run .\publish.ps1 again.' -ForegroundColor Yellow
+    exit 1
+  }
+  Write-Host "npm user: $($who.Lines -join ' ')"
+
+  $existing = Invoke-Npm @('view', "dsh-sidebar-dock@$version", 'version')
+  if ($existing.Code -eq 0 -and ($existing.Lines -join '') -match '\d+\.\d+\.\d+') {
     Write-Host "dsh-sidebar-dock@$version is already on npm — bump the version first." -ForegroundColor Yellow
     exit 1
   }
@@ -36,12 +63,14 @@ try {
 
   Push-Location dist-npm
   try {
-    npm publish --access public --otp $otp
-    if ($LASTEXITCODE -ne 0) { throw 'npm publish failed' }
+    $publish = Invoke-Npm @('publish', '--access', 'public', '--otp', $otp)
+    $publish.Lines | ForEach-Object { Write-Host $_ }
+    if ($publish.Code -ne 0) { throw 'npm publish failed' }
   }
   finally { Pop-Location }
 
-  npm view dsh-sidebar-dock version
+  $published = Invoke-Npm @('view', 'dsh-sidebar-dock', 'version')
+  if ($published.Code -eq 0) { $published.Lines | ForEach-Object { Write-Host $_ } }
   Write-Host "published: https://www.npmjs.com/package/dsh-sidebar-dock" -ForegroundColor Green
 }
 finally { Pop-Location }
