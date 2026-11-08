@@ -2,8 +2,10 @@
 #
 #   .\publish.ps1
 #
-# npm requires a 6-digit TOTP for every publish. The hold on the account ended
-# 2026-11-04 11:14 UTC (20:14 Asia/Tokyo).
+# npm requires two-factor authentication for every publish. An authenticator-app
+# account needs the 6-digit TOTP; a security-key account (Windows Hello, Touch ID,
+# YubiKey) authenticates through the browser and needs no code at all — for that
+# account leave the OTP prompt empty.
 #
 # Run it from the repository root. Nothing is published unless the version in
 # package.json is new.
@@ -54,16 +56,23 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'prepare-npm.mjs failed' }
 
   Write-Host ''
-  Write-Host 'Paste the 6-digit code from your authenticator app (not a recovery code):'
-  $otp = Read-Host 'OTP'
-  if ($otp -notmatch '^\d{6}$') {
-    Write-Host 'That is not a 6-digit TOTP. Recovery codes do not work here and trigger a 72h lock.' -ForegroundColor Red
+  Write-Host 'Two-factor authentication:'
+  Write-Host '  - authenticator app (6-digit TOTP): paste the code below'
+  Write-Host '  - security key / Windows Hello: leave empty and press Enter,'
+  Write-Host '    npm will authenticate in the browser'
+  $otp = Read-Host 'OTP (Enter to skip)'
+  $otpArgs = @()
+  if ($otp -match '^\d{6}$') {
+    $otpArgs = @('--otp', $otp)
+  }
+  elseif ("$otp".Trim() -ne '') {
+    Write-Host 'That is neither empty nor a 6-digit TOTP. Recovery codes do not work here and trigger a 72h lock.' -ForegroundColor Red
     exit 1
   }
 
   Push-Location dist-npm
   try {
-    $publish = Invoke-Npm @('publish', '--access', 'public', '--otp', $otp)
+    $publish = Invoke-Npm (@('publish', '--access', 'public') + $otpArgs)
     $publish.Lines | ForEach-Object { Write-Host $_ }
     if ($publish.Code -ne 0) { throw 'npm publish failed' }
   }
