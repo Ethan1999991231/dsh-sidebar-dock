@@ -72,9 +72,15 @@ try {
 
   Push-Location dist-npm
   try {
-    $publish = Invoke-Npm (@('publish', '--access', 'public') + $otpArgs)
-    $publish.Lines | ForEach-Object { Write-Host $_ }
-    if ($publish.Code -ne 0) { throw 'npm publish failed' }
+    # Published without capturing stdout: npm only prints the real
+    # "https://www.npmjs.com/auth/cli/<id>" browser link when its stdout is a
+    # terminal. Through a pipe (or a redirected log) it redacts the id to "***"
+    # and the web-authentication flow becomes impossible to complete.
+    $ErrorActionPreference = 'Continue'
+    & npm publish --access public @otpArgs
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
+    if ($code -ne 0) { throw "npm publish failed (exit $code)" }
   }
   finally { Pop-Location }
 
